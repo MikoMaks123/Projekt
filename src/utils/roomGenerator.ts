@@ -872,16 +872,39 @@ const generateUniquePortalEvent = (level: number): RoomEventType => {
 };
 
 const generateUniqueBossEvent = (level: number): RoomEventType => {
+  const availableEnemies = ENEMY_POOL.filter(enemy => 
+    enemy.level <= level + 3 && enemy.level >= Math.max(1, level)
+  );
+  
+  const baseEnemy = availableEnemies[Math.floor(Math.random() * availableEnemies.length)];
+  
+  const bossEnemy: Enemy = {
+    ...baseEnemy,
+    name: `Boss ${baseEnemy.name}`,
+    level: baseEnemy.level + level,
+    health: Math.floor(baseEnemy.maxHealth * 2.5) + (level * 30),
+    maxHealth: Math.floor(baseEnemy.maxHealth * 2.5) + (level * 30),
+    stats: {
+      strength: baseEnemy.stats.strength + level,
+      dexterity: baseEnemy.stats.dexterity + Math.floor(level / 2),
+      endurance: baseEnemy.stats.endurance + level,
+      luck: baseEnemy.stats.luck + Math.floor(level / 2)
+    },
+    experienceReward: baseEnemy.experienceReward * 3 + (level * 50),
+    skills: baseEnemy.skills.map(skill => ({ ...skill, currentCooldown: 0 }))
+  };
+
   return {
     type: 'boss',
     title: 'Strażnik Poziomu',
-    description: 'Potężny boss blokuje drogę...',
+    description: `Potężny ${bossEnemy.name} blokuje drogę do następnego poziomu!`,
     choices: [
       {
-        text: 'Walcz',
-        result: { type: 'combat', description: 'Rozpoczyna się epicki pojedynek!' }
+        text: 'Walcz z Bossem',
+        result: { type: 'combat', enemy: bossEnemy, description: 'Rozpoczyna się epicki pojedynek!' }
       }
     ],
+    enemy: bossEnemy,
     uniqueId: `boss_${level}`,
     rarity: 'legendary'
   };

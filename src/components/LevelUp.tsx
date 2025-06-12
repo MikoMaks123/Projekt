@@ -18,7 +18,7 @@ export const LevelUp: React.FC<LevelUpProps> = ({ player, onLevelUpComplete }) =
       newPlayer.level++;
       levelsGained++;
       
-      newPlayer.experienceToNext = Math.floor(newPlayer.experienceToNext * 1.2);
+      newPlayer.experienceToNext = Math.floor(100 * Math.pow(1.2, newPlayer.level - 1));
       
       newPlayer.availableStatPoints += 3;
       newPlayer.availableSkillPoints += 1;

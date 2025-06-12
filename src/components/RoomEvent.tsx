@@ -3,7 +3,7 @@ import { Character } from '../types/game';
 import { RoomEventType } from '../utils/roomGenerator';
 import { 
   Sword, Package, Heart, Zap, User, HelpCircle, 
-  Flame, Shield, Star, Scroll, Key, Coins
+  Flame, Shield, Star, Scroll, Key, Coins, X
 } from 'lucide-react';
 
 interface RoomEventProps {
@@ -70,6 +70,19 @@ export const RoomEvent: React.FC<RoomEventProps> = ({
 
   const completeEvent = () => {
     onEventComplete(eventResult);
+  };
+
+  const canMakeChoice = (choice: any) => {
+    if (choice.keyRequirement && playerKeys < choice.keyRequirement) {
+      return false;
+    }
+    return true;
+  };
+
+  const meetsStatRequirement = (choice: any) => {
+    if (!choice.statRequirement) return true;
+    const playerStat = player.stats[choice.statRequirement.stat as keyof typeof player.stats];
+    return playerStat >= choice.statRequirement.value;
   };
 
   if (showResult) {
@@ -174,10 +187,9 @@ export const RoomEvent: React.FC<RoomEventProps> = ({
 
       <div className="space-y-4">
         {event.choices.map((choice, index) => {
-          const canChoose = !choice.keyRequirement || playerKeys >= choice.keyRequirement;
+          const canChoose = canMakeChoice(choice);
           const hasStatRequirement = choice.statRequirement;
-          const meetsStatRequirement = hasStatRequirement ? 
-            player.stats[choice.statRequirement!.stat as keyof typeof player.stats] >= choice.statRequirement!.value : true;
+          const meetsStatReq = meetsStatRequirement(choice);
 
           return (
             <button
@@ -195,9 +207,14 @@ export const RoomEvent: React.FC<RoomEventProps> = ({
                   <div className="text-white font-semibold mb-2">{choice.text}</div>
                   
                   {hasStatRequirement && (
-                    <div className={`text-sm mb-2 ${meetsStatRequirement ? 'text-green-400' : 'text-red-400'}`}>
-                      Wymaga: {choice.statRequirement!.stat} ≥ {choice.statRequirement!.value}
-                      {meetsStatRequirement ? ' ✓' : ' ✗'}
+                    <div className={`text-sm mb-2 ${meetsStatReq ? 'text-green-400' : 'text-red-400'}`}>
+                      Wymaga: {choice.statRequirement!.stat === 'strength' ? 'Siła' :
+                               choice.statRequirement!.stat === 'dexterity' ? 'Zręczność' :
+                               choice.statRequirement!.stat === 'endurance' ? 'Wytrzymałość' : 'Szczęście'} ≥ {choice.statRequirement!.value}
+                      {meetsStatReq ? ' ✓' : ' ✗'}
+                      <span className="ml-2 text-gray-400">
+                        (Twoja: {player.stats[choice.statRequirement!.stat as keyof typeof player.stats]})
+                      </span>
                     </div>
                   )}
                   
@@ -205,6 +222,9 @@ export const RoomEvent: React.FC<RoomEventProps> = ({
                     <div className={`text-sm mb-2 ${canChoose ? 'text-yellow-400' : 'text-red-400'}`}>
                       Wymaga: {choice.keyRequirement} kluczy
                       {canChoose ? ' ✓' : ' ✗'}
+                      <span className="ml-2 text-gray-400">
+                        (Masz: {playerKeys})
+                      </span>
                     </div>
                   )}
                   
@@ -216,14 +236,32 @@ export const RoomEvent: React.FC<RoomEventProps> = ({
                 </div>
                 
                 <div className="ml-4">
-                  {choice.statRequirement && (
-                    <div className={`w-3 h-3 rounded-full ${meetsStatRequirement ? 'bg-green-400' : 'bg-red-400'}`}></div>
+                  {hasStatRequirement && (
+                    <div className={`w-3 h-3 rounded-full ${meetsStatReq ? 'bg-green-400' : 'bg-red-400'}`}></div>
                   )}
                 </div>
               </div>
             </button>
           );
         })}
+
+        {/* Opcja opuszczenia pokoju jeśli gracz nie spełnia wymagań */}
+        {event.choices.some(choice => !canMakeChoice(choice) || !meetsStatRequirement(choice)) && (
+          <div className="border-t border-gray-600 pt-4 mt-6">
+            <button
+              onClick={() => handleChoice(-1)}
+              className="w-full p-4 rounded-lg border-2 border-gray-500 bg-gray-600 hover:bg-gray-500 text-white transition-all duration-200"
+            >
+              <div className="flex items-center justify-center space-x-2">
+                <X className="w-5 h-5" />
+                <span>Opuść to miejsce (bez nagród)</span>
+              </div>
+              <div className="text-gray-400 text-sm mt-1">
+                Czasem mądrość polega na wycofaniu się
+              </div>
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
