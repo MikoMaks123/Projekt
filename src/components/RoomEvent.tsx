@@ -42,26 +42,37 @@ export const RoomEvent: React.FC<RoomEventProps> = ({
   };
 
   const handleChoice = (choiceIndex: number) => {
-    const choice = event.choices[choiceIndex];
-    let result: any = { ...choice.result };
+    let result: any;
 
-    if (choice.statRequirement) {
-      const playerStat = player.stats[choice.statRequirement.stat as keyof typeof player.stats];
-      if (playerStat >= choice.statRequirement.value) {
-        if (result.experience) result.experience = Math.floor(result.experience * 1.5);
-        if (result.health) result.health = Math.floor(result.health * 1.2);
-        result.success = true;
-      } else {
-        result.experience = Math.floor((result.experience || 0) * 0.5);
-        result.health = Math.floor((result.health || 0) * 0.5);
-        result.success = false;
+    // Handle the "leave this place" option (choiceIndex -1)
+    if (choiceIndex === -1) {
+      result = {
+        experience: 1,
+        description: "Postanowiłeś się wycofać. Czasem mądrość polega na unikaniu niepotrzebnego ryzyka.",
+        success: null
+      };
+    } else {
+      const choice = event.choices[choiceIndex];
+      result = { ...choice.result };
+
+      if (choice.statRequirement) {
+        const playerStat = player.stats[choice.statRequirement.stat as keyof typeof player.stats];
+        if (playerStat >= choice.statRequirement.value) {
+          if (result.experience) result.experience = Math.floor(result.experience * 1.5);
+          if (result.health) result.health = Math.floor(result.health * 1.2);
+          result.success = true;
+        } else {
+          result.experience = Math.floor((result.experience || 0) * 0.5);
+          result.health = Math.floor((result.health || 0) * 0.5);
+          result.success = false;
+        }
       }
-    }
 
-    if (reputation > 10 && result.experience) {
-      result.experience = Math.floor(result.experience * 1.2);
-    } else if (reputation < -10 && result.health) {
-      result.health = Math.floor(result.health * 0.8);
+      if (reputation > 10 && result.experience) {
+        result.experience = Math.floor(result.experience * 1.2);
+      } else if (reputation < -10 && result.health) {
+        result.health = Math.floor(result.health * 0.8);
+      }
     }
 
     setEventResult(result);
